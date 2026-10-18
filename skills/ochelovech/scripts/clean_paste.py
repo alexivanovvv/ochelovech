@@ -125,10 +125,12 @@ def clean(text: str) -> Tuple[str, Dict[str, int]]:
 
 
 # START_BLOCK_HOUSE_STYLE
-# Spans the house typography must not touch: fenced and inline code, links, script/style
-# bodies, HTML tags with their attributes, YAML frontmatter.
+# Spans the house typography must not touch: fenced and inline code, links, the HTML head
+# (title and meta are set by the site), script/style/pre/code bodies (prompts are quoted
+# verbatim), HTML tags with their attributes, YAML frontmatter.
 PROTECTED = re.compile(
-    r"\A---\n.*?\n---\n|```.*?```|`[^`\n]*`|<script\b.*?</script>|<style\b.*?</style>"
+    r"\A---\n.*?\n---\n|```.*?```|`[^`\n]*`|<head\b.*?</head>|<script\b.*?</script>"
+    r"|<style\b.*?</style>|<pre\b.*?</pre>|<code\b.*?</code>"
     r"|<[^<>\n]*>|https?://[^\s<>«»\"')\]]+", re.S | re.I)
 DASH_ENTITY = re.compile(r"&(?:mdash|ndash|#8212|#8211|#x2014|#x2013);", re.I)
 SP = r"(?:[ \t\u00a0]|&nbsp;)"

@@ -238,6 +238,13 @@ class HouseStyleTest(unittest.TestCase):
         out, _ = cp.house(src)
         self.assertEqual(out, 'Код `a — b`, https://x.com/a—ё и <a title="x — ё">текст - тут</a>')
 
+    def test_html_head_and_pre_are_protected(self):
+        src = ("<head><title>AI — всё</title></head><body><p>Тут — всё</p>"
+               "<pre>Промпт — ещё</pre><code>a — ё</code></body>")
+        out, _ = cp.house(src)
+        self.assertEqual(out, "<head><title>AI — всё</title></head><body><p>Тут - все</p>"
+                              "<pre>Промпт — ещё</pre><code>a — ё</code></body>")
+
     def test_cli_flag(self):
         r = subprocess.run([sys.executable, str(SCRIPTS / "clean_paste.py"), "-", "--alexey"],
                            input="Всё — просто.", capture_output=True, text=True)
