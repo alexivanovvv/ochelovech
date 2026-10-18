@@ -6,7 +6,7 @@
 #          readable through a read_file tool, scripts unavailable. Same user request for all.
 # SCOPE: writes eval/results/<run>/outputs/<system>/<id>.txt and runs.jsonl; resumable.
 # DEPENDS: evallib (chat, ledger), eval/systems.json, eval/corpus/index.json + texts,
-#          eval/.cache/systems/<name>/ (fetch_systems.py) and skills/humanizer-ru for "ours".
+#          eval/.cache/systems/<name>/ (fetch_systems.py) and skills/ochelovech for "ours".
 # LINKS: M-EVAL-RUN; DF-EVAL.
 # END_MODULE_CONTRACT
 # START_MODULE_MAP

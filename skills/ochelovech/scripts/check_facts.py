@@ -131,6 +131,8 @@ SENT_START_STOP = {"В", "На", "С", "И", "А", "Но", "Это", "Мы", "В
 # "Вы" and "Ваш" written with a capital out of politeness are not names.
 POLITE_PRONOUN = re.compile(r"Вы|Вас|Вам|Вами|Ваш(?:а|е|и|его|ему|ем|ей|у|ую|их|им|ими)?|"
                             r"Ты|Тебе|Тебя|Тобой|Твой|Тво(?:я|е|ё|и|его|ему|ем|ём|ей|ю|их|им|ими)")
+# Tags inside a line of text; any other tag before a word starts a new block (<p>, <li>, </h3>).
+INLINE_TAGS = {"a", "b", "strong", "i", "em", "mark", "u", "span", "code", "sup", "sub", "small", "s"}
 # Frequent first names: a capitalised word at the start of a sentence is a name when it
 # matches one of these (case endings allowed), otherwise only when it is capitalised elsewhere.
 FIRST_NAMES = set("""Александр Александра Алексей Алина Алиса Алла Анастасия Анатолий Андрей Анна
@@ -378,12 +380,20 @@ def _negated_near(text: str, start: int, end: int) -> bool:
 
 def _is_initial(text: str, pos: int) -> bool:
     """True when only markup, list markers, emoji or spaces stand between the word and the
-    start of a line or the end of the previous sentence."""
+    start of a line or the end of the previous sentence. A block tag (<p>, <li>, </h3>) starts
+    a new line; an inline one (<b>, <a href>) is skipped."""
     i = pos - 1
     while i >= 0:
         ch = text[i]
         if ch == "\n" or ch in ".!?…:":
             return True
+        if ch == ">":
+            tag = re.match(r"</?([a-zA-Z][a-zA-Z0-9]*)[^<>]*>$", text[text.rfind("<", 0, i):i + 1])
+            if tag:
+                if tag.group(1).lower() not in INLINE_TAGS:
+                    return True
+                i = text.rfind("<", 0, i) - 1
+                continue
         if ch.isalnum() and not (ch.isdigit() and re.match(r"\d+[.)]", text[i:pos].lstrip())):
             return False
         if ch.isalpha():
@@ -573,13 +583,20 @@ def compare(before: str, after: str) -> Dict:
             pairs.setdefault(n.value, set()).update(owners)
     all_owners = set().union(*pairs.values()) if pairs else set()
     if len(all_owners) >= 2:
+        def near(facts: Facts, n: Fact) -> set:
+            words = re.findall(r"[\w-]+", facts.sentences[n.sent] if n.sent < len(facts.sentences) else "")
+            return {o for o in all_owners if any(stem_match(o, w) for w in words)}
+        # A number repeated in the original (card numbers 01, 02…) may stand by any name it stood by there.
+        allowed: Dict[str, set] = {}
+        for n in fb.of("number"):
+            if n.value in pairs:
+                allowed.setdefault(n.value, set()).update(near(fb, n))
         for n in fa.of("number"):
             want = pairs.get(n.value)
             if not want:
                 continue
-            sent_words = re.findall(r"[\w-]+", fa.sentences[n.sent] if n.sent < len(fa.sentences) else "")
-            here = {o for o in all_owners if any(stem_match(o, w) for w in sent_words)}
-            if here and not (here & want):
+            here = near(fa, n)
+            if here and not (here & allowed[n.value]):
                 errors.append({"kind": "swap", "what": "привязка",
                                "detail": "%s в исходнике относится к «%s», в правке стоит рядом с «%s»" % (
                                    n.raw, "/".join(sorted(want)), "/".join(sorted(here)))})

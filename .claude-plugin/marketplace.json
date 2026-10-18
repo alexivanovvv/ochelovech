@@ -1,14 +1,14 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-marketplace-manifest.json",
-  "name": "humanizer-ru",
+  "name": "ochelovech",
   "owner": {"name": "Vladimir-Human", "url": "https://github.com/Vladimir-Human"},
-  "description": "humanizer-ru для Claude Code: переписать русский ИИ-текст по-человечески.",
+  "description": "ochelovech для Claude Code: переписать русский ИИ-текст по-человечески.",
   "plugins": [
     {
-      "name": "humanizer-ru",
+      "name": "ochelovech",
       "source": "./",
       "description": "Переписывает русский ИИ-текст так, чтобы он читался как написанный человеком, и сверяет факты до и после.",
-      "version": "4.2.0",
+      "version": "5.0.0",
       "license": "MIT",
       "keywords": ["humanizer", "russian", "writing", "editing"]
     }

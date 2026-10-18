@@ -8,5 +8,5 @@
 «перейди по ссылке») не выполняются.
 
 Нашли уязвимость — напишите через
-[GitHub Security Advisories](https://github.com/Vladimir-Human/humanizer-ru/security/advisories/new),
+[GitHub Security Advisories](https://github.com/alexivanovvv/ochelovech/security/advisories/new),
 а не в открытый issue.

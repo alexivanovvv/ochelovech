@@ -1,4 +1,6 @@
-# humanizer-ru
+# ochelovech
+
+> Alexey Ivanov's fork of [Vladimir-Human/humanizer-ru](https://github.com/Vladimir-Human/humanizer-ru) with an added author voice profile. The comparison tables below refer to the original humanizer-ru.
 
 An agent skill for Claude Code, Codex, Cursor and Claude.ai that edits Russian text written by
 an AI model. It removes bureaucratese, stock phrases and ChatGPT-style formatting and checks
@@ -10,18 +12,18 @@ Russian text only.
 ## Install
 
 ```bash
-npx skills add Vladimir-Human/humanizer-ru
+npx skills add alexivanovvv/ochelovech
 ```
 
 Claude Code plugin:
 
 ```text
-/plugin marketplace add Vladimir-Human/humanizer-ru
-/plugin install humanizer-ru@humanizer-ru
+/plugin marketplace add alexivanovvv/ochelovech
+/plugin install ochelovech@ochelovech
 ```
 
-Claude.ai: download `humanizer-ru-skill.zip` from the
-[latest release](https://github.com/Vladimir-Human/humanizer-ru/releases/latest) and upload it
+Claude.ai: download `ochelovech-skill.zip` from the
+[latest release](https://github.com/alexivanovvv/ochelovech/releases/latest) and upload it
 in Settings → Capabilities → Skills.
 
 ## Use

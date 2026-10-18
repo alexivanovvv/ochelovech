@@ -1,12 +1,12 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
-  "name": "humanizer-ru",
-  "displayName": "humanizer-ru",
+  "name": "ochelovech",
+  "displayName": "ochelovech",
   "description": "Переписывает русский ИИ-текст так, чтобы он читался как написанный человеком, и сверяет факты до и после. | Rewrites AI-sounding Russian text into natural Russian and checks that facts survived.",
-  "version": "4.2.0",
+  "version": "5.0.0",
   "author": {"name": "Vladimir-Human", "url": "https://github.com/Vladimir-Human"},
-  "homepage": "https://github.com/Vladimir-Human/humanizer-ru",
-  "repository": "https://github.com/Vladimir-Human/humanizer-ru",
+  "homepage": "https://github.com/alexivanovvv/ochelovech",
+  "repository": "https://github.com/alexivanovvv/ochelovech",
   "license": "MIT",
   "keywords": ["humanizer", "russian", "writing", "editing", "ai-writing", "канцелярит", "очеловечить"],
   "skills": "./skills/"

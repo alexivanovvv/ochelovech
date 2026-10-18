@@ -49,11 +49,11 @@ class RepoTest(unittest.TestCase):
         self.assertTrue(any("plugin.json" in x for x in check_repo.check(self.tmp)))
 
     def test_missing_reference_is_caught(self):
-        (self.tmp / "skills" / "humanizer-ru" / "references" / "patterns.md").unlink()
+        (self.tmp / "skills" / "ochelovech" / "references" / "patterns.md").unlink()
         self.assertTrue(any("patterns.md" in x for x in check_repo.check(self.tmp)))
 
     def test_crlf_and_invisible_are_caught(self):
-        p = self.tmp / "skills" / "humanizer-ru" / "references" / "examples.md"
+        p = self.tmp / "skills" / "ochelovech" / "references" / "examples.md"
         p.write_bytes(p.read_bytes().replace(b"\n", b"\r\n", 1) + "\u200b".encode("utf-8"))
         problems = check_repo.check(self.tmp)
         self.assertTrue(any("CRLF" in x for x in problems))
@@ -64,8 +64,8 @@ class RepoTest(unittest.TestCase):
         build_zip.build(out)
         with zipfile.ZipFile(out) as zf:
             names = zf.namelist()
-        self.assertIn("humanizer-ru/SKILL.md", names)
-        self.assertTrue(all(n.startswith("humanizer-ru/") and n.isascii() for n in names))
+        self.assertIn("ochelovech/SKILL.md", names)
+        self.assertTrue(all(n.startswith("ochelovech/") and n.isascii() for n in names))
         self.assertFalse(any("__pycache__" in n for n in names))
 
 

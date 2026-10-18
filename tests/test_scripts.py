@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 # START_MODULE_CONTRACT
-# PURPOSE: Unit tests for the skill helpers: check_facts.py and clean_paste.py.
+# PURPOSE: Unit tests for the skill helpers: check_facts, clean_paste, edit_budget, apply_edits.
 # SCOPE: positive and negative cases for each kind of fact and artifact.
-# DEPENDS: unittest; scripts loaded by path from skills/humanizer-ru/scripts.
-# LINKS: V-M-CHECK-FACTS; V-M-CLEAN-PASTE.
+# DEPENDS: unittest; scripts loaded by path from skills/ochelovech/scripts.
+# LINKS: V-M-CHECK-FACTS; V-M-CLEAN-PASTE; V-M-EDIT-BUDGET; V-M-APPLY-EDITS.
 # END_MODULE_CONTRACT
 import importlib.util
 import subprocess
@@ -12,7 +12,7 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-SCRIPTS = ROOT / "skills" / "humanizer-ru" / "scripts"
+SCRIPTS = ROOT / "skills" / "ochelovech" / "scripts"
 
 
 def _load(name):
@@ -25,6 +25,8 @@ def _load(name):
 
 cf = _load("check_facts")
 cp = _load("clean_paste")
+eb = _load("edit_budget")
+ae = _load("apply_edits")
 
 
 def kinds(result):
@@ -40,6 +42,18 @@ class CheckFactsTest(unittest.TestCase):
         a = "Анна получила 30 000 рублей. Борис получил 50 000 рублей."
         b = "Анна получила 50 000 рублей. Борис получил 30 000 рублей."
         self.assertIn("swap", kinds(cf.compare(a, b)))
+
+    def test_repeated_card_numbers_are_not_swaps(self):
+        text = ("01 Анна ведет план. 02 Борис ведет бюджет. "
+                "Шаги: 01 Анна и Борис собирают задачи. 02 Анна и Борис делят их.")
+        self.assertNotIn("swap", kinds(cf.compare(text, text)))
+
+    def test_word_after_block_tag_is_not_a_name(self):
+        a = "<h3>Шаг</h3> <p>Разбиение задач на микрошаги.</p> <p>Пишет <b>Анна</b> Смирнова.</p>"
+        b = "<h3>Шаг</h3> <p>Разбивать задачи на микрошаги.</p> <p>Пишет <b>Анна</b> Смирнова.</p>"
+        self.assertEqual(cf.compare(a, b)["errors"], [])
+        lost = cf.compare(a, b.replace("Анна", "она"))["errors"]
+        self.assertTrue(any("Анна" in e["detail"] for e in lost))
 
     def test_lost_and_added_numbers(self):
         r = cf.compare("Ссылка действует 30 дней.", "Ссылка действует 45 дней.")
@@ -202,6 +216,145 @@ class CleanPasteTest(unittest.TestCase):
     def test_clean_text_untouched(self):
         src = "Обычный текст — с тире, «ёлочками» и ссылкой https://a.ru/x?id=2."
         self.assertEqual(cp.clean(src), (src, {}))
+
+
+
+class HouseStyleTest(unittest.TestCase):
+    def test_dashes_become_hyphen(self):
+        out, n = cp.house("Personal OS — это среда. Годы 1941–1945. Конец —\nдальше")
+        self.assertEqual(out, "Personal OS - это среда. Годы 1941-1945. Конец -\nдальше")
+        self.assertEqual(n["тире"], 3)
+
+    def test_dialogue_and_html_entities(self):
+        self.assertEqual(cp.house("— Привет, — сказал он.")[0], "- Привет, - сказал он.")
+        self.assertEqual(cp.house("<p>A&nbsp;&mdash; B</p>")[0], "<p>A - B</p>")
+
+    def test_yo(self):
+        self.assertEqual(cp.house("Ёлки, всё ещё", hyphen=False)[0], "Елки, все еще")
+        self.assertEqual(cp.house("всё — ок", yo=False)[0], "всё - ок")
+
+    def test_code_links_and_tags_are_protected(self):
+        src = 'Код `a — b`, https://x.com/a—ё и <a title="x — ё">текст — тут</a>'
+        out, _ = cp.house(src)
+        self.assertEqual(out, 'Код `a — b`, https://x.com/a—ё и <a title="x — ё">текст - тут</a>')
+
+    def test_cli_flag(self):
+        r = subprocess.run([sys.executable, str(SCRIPTS / "clean_paste.py"), "-", "--alexey"],
+                           input="Всё — просто.", capture_output=True, text=True)
+        self.assertEqual((r.returncode, r.stdout), (1, "Все - просто."))
+
+
+class ApplyEditsTest(unittest.TestCase):
+    SRC = ("Personal AI OS — это рабочая среда, которая даёт AI постоянный контекст.\n\n"
+           "Соберите контекст, который обычно приходится объяснять вручную. "
+           "Это и есть реальное топливо системы.\n\n"
+           "Курс идёт шесть недель. Новичкам подходит интенсив, интенсив простой.")
+
+    def run_edits(self, edits, skip=frozenset()):
+        parsed, errors = ae.parse(edits)
+        self.assertEqual(errors, [])
+        return ae.apply(self.SRC, parsed, skip)
+
+    def test_untouched_text_stays_identical(self):
+        new, applied, errors = self.run_edits(
+            "@@ 9 концовка-мораль\n- Это и есть реальное топливо системы.\n+ С него система и работает.\n")
+        self.assertEqual(errors, [])
+        self.assertEqual(new, self.SRC.replace("Это и есть реальное топливо системы.", "С него система и работает."))
+
+    def test_reason_is_required(self):
+        _, errors = ae.parse("@@\n- Курс\n+ Курс!\n")
+        self.assertTrue(any("без причины" in e for e in errors))
+
+    def test_missing_and_ambiguous_quotes_write_nothing(self):
+        new, applied, errors = self.run_edits("@@ 1\n- нет такой фразы\n+ x\n@@ 2\n- нтенсив\n+ x\n")
+        self.assertEqual(new, self.SRC)
+        self.assertEqual(applied, [])
+        self.assertTrue(any("не найдена" in e for e in errors))
+        self.assertTrue(any("встречается 2 раз" in e for e in errors))
+
+    def test_replace_all_and_skip(self):
+        new, applied, _ = self.run_edits("@@* термин\n- интенсив\n+ курс\n@@ 9\n- Курс идёт\n+ Курс длится\n",
+                                         skip={2})
+        self.assertIn("подходит курс, курс простой.", new)
+        self.assertIn("Курс идёт", new)
+        self.assertEqual([e.n for e in applied], [1])
+
+    def test_tolerant_match_for_dash_yo_and_spaces(self):
+        new, applied, errors = self.run_edits("@@ механика\n- Personal AI OS - это рабочая   среда, которая дает\n"
+                                              "+ Personal OS - это рабочая среда, которая дает\n")
+        self.assertEqual(errors, [])
+        self.assertTrue(new.startswith("Personal OS - это рабочая среда, которая дает AI"))
+
+    def test_overlap_is_refused(self):
+        _, _, errors = self.run_edits("@@ 1\n- Курс идёт шесть\n+ Курс шесть\n@@ 2\n- идёт шесть недель\n+ идёт\n")
+        self.assertTrue(any("задевают один фрагмент" in e for e in errors))
+
+    def test_multiline_quote_and_deletion(self):
+        new, _, errors = self.run_edits("@@ 11 метатекст\n- вручную. Это и есть реальное топливо системы.\n-\n- Курс\n"
+                                        "+ вручную.\n+\n+ Курс\n")
+        self.assertEqual(errors, [])
+        self.assertNotIn("топливо", new)
+
+    def test_cli_review_and_exit_codes(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            src, ed, rv = Path(d) / "a.txt", Path(d) / "e.txt", Path(d) / "r.html"
+            src.write_text(self.SRC, encoding="utf-8")
+            ed.write_text("@@ 9 концовка\n- Это и есть реальное топливо системы.\n+ С него и работает.\n",
+                          encoding="utf-8")
+            run = lambda *x: subprocess.run([sys.executable, str(SCRIPTS / "apply_edits.py"), *x],
+                                            capture_output=True, text=True)
+            r = run(str(src), str(ed), "--review", str(rv))
+            self.assertEqual(r.returncode, 0)
+            self.assertIn("С него и работает.", r.stdout)
+            self.assertIn("<del>", rv.read_text(encoding="utf-8"))
+            ed.write_text("@@ 1 переписал все\n- " + self.SRC.replace("\n\n", "\n- \n- ").replace("- \n", "-\n")
+                          + "\n+ Совсем другой текст про другое.\n", encoding="utf-8")
+            self.assertEqual(run(str(src), str(ed)).returncode, 1)
+            ed.write_text("@@ 1\n- нет такой\n+ x\n", encoding="utf-8")
+            self.assertEqual(run(str(src), str(ed), "-o", str(Path(d) / "out.txt")).returncode, 2)
+            self.assertFalse((Path(d) / "out.txt").exists())
+
+
+class EditBudgetTest(unittest.TestCase):
+    SRC = ("Модели нужен контекст: кто вы и над чем работаете.\n\n"
+           "Соберите файл о себе и держите его рядом с промптами.\n\n"
+           "Не автоматизируйте всё сразу, начните с одной задачи.")
+
+    def test_identical_text_is_in_budget(self):
+        r = eb.measure(self.SRC, self.SRC)
+        self.assertEqual(r["kept"], 1.0)
+        self.assertFalse(eb.over_budget(r))
+
+    def test_mechanical_edit_is_in_budget(self):
+        after = self.SRC.replace("всё", "все").replace(": кто", " - кто")
+        self.assertFalse(eb.over_budget(eb.measure(self.SRC, after)))
+
+    def test_deleted_paragraph_is_caught(self):
+        after = "\n\n".join(self.SRC.split("\n\n")[:2])
+        r = eb.measure(self.SRC, after)
+        self.assertEqual(len(r["deleted"]), 1)
+        self.assertTrue(eb.over_budget(r))
+
+    def test_rewritten_paragraph_is_caught(self):
+        parts = self.SRC.split("\n\n")
+        parts[2] = "Я пробовал внедрять все автоматизации разом, это путь к выгоранию."
+        r = eb.measure(self.SRC, "\n\n".join(parts))
+        self.assertTrue(r["rewritten"] or r["deleted"])
+        self.assertTrue(eb.over_budget(r))
+
+    def test_cli_exit_codes(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            a, b = Path(d) / "a.txt", Path(d) / "b.txt"
+            a.write_text(self.SRC, encoding="utf-8")
+            b.write_text(self.SRC, encoding="utf-8")
+            run = lambda *x: subprocess.run([sys.executable, str(SCRIPTS / "edit_budget.py"), *x],
+                                            capture_output=True, text=True).returncode
+            self.assertEqual(run(str(a), str(b)), 0)
+            b.write_text("Совсем другой текст.", encoding="utf-8")
+            self.assertEqual(run(str(a), str(b)), 1)
+            self.assertEqual(run(str(a), str(Path(d) / "nope.txt")), 2)
 
 
 if __name__ == "__main__":

@@ -3,14 +3,18 @@
 # START_MODULE_CONTRACT
 # PURPOSE: Remove chat-interface leftovers from pasted text: citation tokens
 #          (contentReference, 【N†source】, [cite: N]), utm tails in links, invisible
-#          characters. Text, links and emoji stay intact.
-# SCOPE: deterministic, stdlib only; style and wording are not touched.
+#          characters. Text, links and emoji stay intact. Optional house typography of
+#          the author: long and middle dashes -> hyphen with spaces, ё -> е.
+# SCOPE: deterministic, stdlib only; wording is not touched. Code, links and HTML tags are
+#        protected from the house typography.
 # DEPENDS: Python 3.8+ standard library.
 # LINKS: M-CLEAN-PASTE; DF-SKILL-CLEAN; V-M-CLEAN-PASTE.
 # END_MODULE_CONTRACT
 # START_MODULE_MAP
 # clean: text -> (cleaned text, counts by kind).
-# main: CLI `clean_paste.py file [--in-place]`; prints cleaned text or rewrites the file
+# house: (text, hyphen, yo) -> (text with author typography, counts by kind).
+# main: CLI `clean_paste.py file [--in-place] [--hyphen] [--no-yo] [--alexey]`;
+#       prints cleaned text or rewrites the file
 #       (keeps file.bak); report goes to stderr; exit 0 nothing found, 1 cleaned, 2 bad input.
 # END_MODULE_MAP
 """Очистка мусора вставки из чата.
@@ -18,8 +22,13 @@
     python clean_paste.py текст.txt              # очищенный текст в stdout
     python clean_paste.py текст.txt --in-place   # правка файла, копия в текст.txt.bak
     python clean_paste.py -                      # чтение из stdin
+    python clean_paste.py текст.txt --hyphen     # тире «—» и «–» -> «-» с пробелами
+    python clean_paste.py текст.txt --no-yo      # «ё» -> «е»
+    python clean_paste.py текст.txt --alexey     # типографика Алексея Иванова: оба флага
 
-Код выхода: 0 — мусора нет, 1 — мусор снят, 2 — файл не читается.
+Код, ссылки и HTML-теги типографика не трогает.
+Код выхода: 0 — менять нечего, 1 — мусор снят или типографика поправлена,
+2 — файл не читается.
 """
 from __future__ import annotations
 
@@ -115,10 +124,56 @@ def clean(text: str) -> Tuple[str, Dict[str, int]]:
     return "".join(out), counts
 
 
+# START_BLOCK_HOUSE_STYLE
+# Spans the house typography must not touch: fenced and inline code, links, script/style
+# bodies, HTML tags with their attributes, YAML frontmatter.
+PROTECTED = re.compile(
+    r"\A---\n.*?\n---\n|```.*?```|`[^`\n]*`|<script\b.*?</script>|<style\b.*?</style>"
+    r"|<[^<>\n]*>|https?://[^\s<>«»\"')\]]+", re.S | re.I)
+DASH_ENTITY = re.compile(r"&(?:mdash|ndash|#8212|#8211|#x2014|#x2013);", re.I)
+SP = r"(?:[ \t\u00a0]|&nbsp;)"
+
+
+# START_CONTRACT: house
+# PURPOSE: Apply the author's typography: dashes become a hyphen, ё becomes е.
+# INPUTS: text (str), hyphen (bool), yo (bool: replace ё with е).
+# OUTPUTS: (text, {"тире": n, "ё": n}) with zero counts omitted.
+# SIDE_EFFECTS: none.
+# END_CONTRACT: house
+def house(text: str, hyphen: bool = True, yo: bool = True) -> Tuple[str, Dict[str, int]]:
+    counts: Dict[str, int] = {}
+    saved = []
+
+    def hide(m: re.Match) -> str:
+        saved.append(m.group(0))
+        return "\ue000%d\ue001" % (len(saved) - 1)
+
+    work = PROTECTED.sub(hide, text)
+    if hyphen:
+        work = DASH_ENTITY.sub(lambda m: "—", work)
+        n = work.count("—") + work.count("–")
+        if n:
+            counts["тире"] = n
+            work = re.sub(r"(?<=\d)[—–](?=\d)", "-", work)                    # 1941—1945
+            work = re.sub(r"(?m)^([ \t]*)[—–]%s*" % SP, r"\1- ", work)       # реплика в диалоге
+            work = re.sub(r"%s*[—–]%s*$" % (SP, SP), " -", work, flags=re.M)
+            work = re.sub(r"%s*[—–]%s*" % (SP, SP), " - ", work)
+    if yo:
+        n = work.count("ё") + work.count("Ё")
+        if n:
+            counts["ё"] = n
+            work = work.replace("ё", "е").replace("Ё", "Е")
+    return re.sub("\ue000(\\d+)\ue001", lambda m: saved[int(m.group(1))], work), counts
+# END_BLOCK_HOUSE_STYLE
+
+
 def main(argv=None) -> int:
     args = list(sys.argv[1:] if argv is None else argv)
     in_place = "--in-place" in args
-    args = [a for a in args if a != "--in-place"]
+    alexey = "--alexey" in args
+    hyphen = alexey or "--hyphen" in args
+    yo = alexey or "--no-yo" in args
+    args = [a for a in args if a not in ("--in-place", "--alexey", "--hyphen", "--no-yo")]
     if len(args) != 1 or args[0] in ("-h", "--help"):
         print(__doc__)
         return 2
@@ -133,6 +188,9 @@ def main(argv=None) -> int:
         print("Не могу прочитать файл: %s" % exc, file=sys.stderr)
         return 2
     cleaned, counts = clean(src)
+    if hyphen or yo:
+        cleaned, typo = house(cleaned, hyphen, yo)
+        counts.update(typo)
     if in_place and path != "-":
         if counts:
             shutil.copyfile(path, path + ".bak")

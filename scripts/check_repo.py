@@ -21,7 +21,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-SKILL_DIR = Path("skills") / "humanizer-ru"
+SKILL_DIR = Path("skills") / "ochelovech"
 INVISIBLE = {0x200B, 0x200C, 0x200D, 0x2060, 0xFEFF, 0x00AD}
 
 
@@ -53,8 +53,8 @@ def check(root: Path) -> list:
         return ["нет %s" % (SKILL_DIR / "SKILL.md")]
     text = skill_md.read_text(encoding="utf-8")
     fm = frontmatter(text)
-    if fm.get("name") != "humanizer-ru":
-        problems.append("SKILL.md: name должен быть humanizer-ru, сейчас %r" % fm.get("name"))
+    if fm.get("name") != "ochelovech":
+        problems.append("SKILL.md: name должен быть ochelovech, сейчас %r" % fm.get("name"))
     desc = fm.get("description", "")
     if not desc or len(desc) > 1024:
         problems.append("SKILL.md: description пустой или длиннее 1024 символов (%d)" % len(desc))

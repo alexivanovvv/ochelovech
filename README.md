@@ -1,4 +1,6 @@
-# humanizer-ru
+# ochelovech
+
+> Форк [Vladimir-Human/humanizer-ru](https://github.com/Vladimir-Human/humanizer-ru) от Алексея Иванова: тот же навык плюс профиль голоса `references/voice-alexey-ivanov.md`. Таблицы сравнения ниже относятся к оригиналу humanizer-ru.
 
 Навык для Claude Code, Codex, Cursor и Claude.ai. Правит русский текст после нейросети:
 убирает канцелярит, штампы и оформление «как у ChatGPT» и следит, чтобы цифры, даты, имена
@@ -7,7 +9,7 @@
 [English](README.en.md) · [Сайт со сравнением](https://vladimir-human.github.io/humanizer-ru/)
 
 ```bash
-npx skills add Vladimir-Human/humanizer-ru
+npx skills add alexivanovvv/ochelovech
 ```
 
 ## Пример
@@ -58,21 +60,21 @@ npx skills add Vladimir-Human/humanizer-ru
 и другие):
 
 ```bash
-npx skills add Vladimir-Human/humanizer-ru
+npx skills add alexivanovvv/ochelovech
 ```
 
 В Claude Code можно поставить плагином, тогда обновления приходят через `/plugin`:
 
 ```text
-/plugin marketplace add Vladimir-Human/humanizer-ru
-/plugin install humanizer-ru@humanizer-ru
+/plugin marketplace add alexivanovvv/ochelovech
+/plugin install ochelovech@ochelovech
 ```
 
-В Claude.ai скачайте `humanizer-ru-skill.zip` из
-[последнего релиза](https://github.com/Vladimir-Human/humanizer-ru/releases/latest) и
+В Claude.ai скачайте `ochelovech-skill.zip` из
+[последнего релиза](https://github.com/alexivanovvv/ochelovech/releases/latest) и
 загрузите в Settings → Capabilities → Skills.
 
-Вручную: скопируйте папку `skills/humanizer-ru` в `~/.claude/skills/` или `~/.agents/skills/`.
+Вручную: скопируйте папку `skills/ochelovech` в `~/.claude/skills/` или `~/.agents/skills/`.
 
 ## Как пользоваться
 
@@ -122,8 +124,8 @@ avoid-ai-writing-russian и вровень с ilyautov. Две наши ошиб
 вручную:
 
 ```bash
-python skills/humanizer-ru/scripts/check_facts.py до.txt после.txt
-python skills/humanizer-ru/scripts/clean_paste.py текст.txt --in-place
+python skills/ochelovech/scripts/check_facts.py до.txt после.txt
+python skills/ochelovech/scripts/clean_paste.py текст.txt --in-place
 ```
 
 `check_facts.py` сравнивает исходник с правкой и показывает пропавшие или новые числа, даты,

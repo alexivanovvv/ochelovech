@@ -5,7 +5,7 @@
 #          against the usefulness thresholds of the remake.
 # SCOPE: reads eval/results/<run>/{outputs,judgments.jsonl}; writes summary.md and summary.json
 #        (--out renames them; --judges keeps only the passes of the named judges).
-# DEPENDS: evallib; skills/humanizer-ru/scripts/check_facts.py (imported by path).
+# DEPENDS: evallib; skills/ochelovech/scripts/check_facts.py (imported by path).
 # LINKS: M-EVAL-REPORT; DF-EVAL; V-M-EVAL.
 # END_MODULE_CONTRACT
 # START_MODULE_MAP
@@ -27,7 +27,7 @@ from collections import Counter, defaultdict
 import evallib as lib
 
 REPO = lib.EVAL_DIR.parent
-_spec = importlib.util.spec_from_file_location("check_facts", REPO / "skills/humanizer-ru/scripts/check_facts.py")
+_spec = importlib.util.spec_from_file_location("check_facts", REPO / "skills/ochelovech/scripts/check_facts.py")
 check_facts = importlib.util.module_from_spec(_spec)
 sys.modules["check_facts"] = check_facts  # dataclasses look the module up while the class is built
 _spec.loader.exec_module(check_facts)
