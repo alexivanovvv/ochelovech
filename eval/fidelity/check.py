@@ -2,8 +2,10 @@
 # -*- coding: utf-8 -*-
 # START_MODULE_CONTRACT
 # PURPOSE: Offline fidelity check of edits on regression cases taken from real over-rewrites:
-#          required phrases kept, forbidden additions absent, no new numbers, no invented first person,
-#          share of source words kept and no deleted paragraphs (via edit_budget).
+#          required phrases kept, forbidden additions absent, no new numbers, no invented first person
+#          (Russian я/мне/мой... and English I/I'm/I've/me/my/we're/we've..., each language on its own),
+#          share of source words kept and no deleted paragraphs (via edit_budget). Cases are Russian
+#          and English.
 # SCOPE: stdlib only, no API calls. Judges only what can be checked by text; meaning is for people
 #        or the meaning check in SKILL.md.
 # DEPENDS: Python 3.8+ standard library; skills/ochelovech/scripts/edit_budget.py.
@@ -40,6 +42,11 @@ if hasattr(sys.stdout, "reconfigure"):
 
 NUMBER = re.compile(r"\d+(?:[.,]\d+)?")
 FIRST_PERSON = re.compile(r"\b(?:я|мне|меня|мной|мой|моя|мое|мои|моих|моим|моей|моего|моему|моем)\b")
+# English, checked on its own so a Latin "my" in a Russian source does not hide an invented "я".
+# norm() makes the straight apostrophe a '"'; the typographic one stays. Bare "we/our" is not
+# counted (generic "we" is normal in English prose), only its contractions: "we've tried".
+FIRST_PERSON_EN = re.compile(r"\b(?:i(?![.\w]|[\"\u2019](?!m\b|ve\b|d\b|ll\b))|me|my|mine|myself|"
+                             r"we[\"\u2019](?:re|ve|d|ll))\b")
 
 
 def norm(text: str) -> str:
@@ -66,8 +73,9 @@ def check(case: Dict, output: str) -> List[str]:
     new_numbers = sorted(set(NUMBER.findall(out)) - set(NUMBER.findall(src)))
     if new_numbers:
         problems.append("новые числа: " + ", ".join(new_numbers))
-    if FIRST_PERSON.search(out) and not FIRST_PERSON.search(src):
-        problems.append("первое лицо, которого не было: «%s»" % FIRST_PERSON.search(out).group(0))
+    for first_person in (FIRST_PERSON, FIRST_PERSON_EN):
+        if first_person.search(out) and not first_person.search(src):
+            problems.append("первое лицо, которого не было: «%s»" % first_person.search(out).group(0))
     budget = edit_budget.measure(case["source"], output)
     if budget["kept"] < case.get("min_kept", 0.6):
         problems.append("сохранено слов %d%% (нужно от %d%%)" % (budget["kept"] * 100, case.get("min_kept", 0.6) * 100))

@@ -1,11 +1,11 @@
 # ochelovech
 
-> Alexey Ivanov's fork of [Vladimir-Human/humanizer-ru](https://github.com/Vladimir-Human/humanizer-ru) with an added author voice profile. The comparison tables below refer to the original humanizer-ru.
+> Alexey Ivanov's fork of [Vladimir-Human/humanizer-ru](https://github.com/Vladimir-Human/humanizer-ru) with an added author voice profile and English support (markers from [blader/humanizer](https://github.com/blader/humanizer), MIT). The comparison tables below refer to the original humanizer-ru.
 
-An agent skill for Claude Code, Codex, Cursor and Claude.ai that edits Russian text written by
+An agent skill for Claude Code, Codex, Cursor and Claude.ai that edits Russian and English text written by
 an AI model. It removes bureaucratese, stock phrases and ChatGPT-style formatting and checks
-that numbers, dates, names and hedges stay as they were. The skill speaks Russian and edits
-Russian text only.
+that numbers, dates, names and hedges stay as they were. It edits Russian and English text in place
+(no translation); English markers live in `references/patterns-en.md`.
 
 [Русский](README.md) · [Site with the comparison](https://vladimir-human.github.io/humanizer-ru/)
 
@@ -31,7 +31,7 @@ in Settings → Capabilities → Skills.
 Paste the text and ask «очеловечь». Other requests: «проверь, что выдаёт ИИ, но не правь»
 (findings only), «убери только канцелярит» (one layer), «поправь README.md» (prose only, code
 and links kept), or give a sample of your own writing to match your style. Good human text,
-contracts and laws are left almost untouched.
+contracts and laws are left almost untouched. In English: «humanize this», «remove AI tells».
 
 ## Comparison
 

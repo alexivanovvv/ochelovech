@@ -1,8 +1,8 @@
 # ochelovech
 
-> Форк [Vladimir-Human/humanizer-ru](https://github.com/Vladimir-Human/humanizer-ru) от Алексея Иванова: тот же навык плюс профиль голоса `references/voice-alexey-ivanov.md`. Таблицы сравнения ниже относятся к оригиналу humanizer-ru.
+> Форк [Vladimir-Human/humanizer-ru](https://github.com/Vladimir-Human/humanizer-ru) от Алексея Иванова: тот же навык плюс профиль голоса `references/voice-alexey-ivanov.md` и английский язык (признаки из [blader/humanizer](https://github.com/blader/humanizer), MIT). Таблицы сравнения ниже относятся к оригиналу humanizer-ru.
 
-Навык для Claude Code, Codex, Cursor и Claude.ai. Правит русский текст после нейросети:
+Навык для Claude Code, Codex, Cursor и Claude.ai. Правит русский и английский текст после нейросети:
 убирает канцелярит, штампы и оформление «как у ChatGPT» и следит, чтобы цифры, даты, имена
 и оговорки остались прежними.
 

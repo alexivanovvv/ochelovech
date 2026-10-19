@@ -1,6 +1,6 @@
 # AGENTS.md — для агентов, которые правят этот репозиторий
 
-ochelovech (форк Vladimir-Human/humanizer-ru) — навык (Agent Skill), который переписывает русский ИИ-текст по-человечески
+ochelovech (форк Vladimir-Human/humanizer-ru) — навык (Agent Skill), который бережно правит русский и английский ИИ-текст
 и сверяет факты. Всё, что получает пользователь, лежит в `skills/ochelovech/`.
 
 ## Карта
@@ -8,7 +8,7 @@ ochelovech (форк Vladimir-Human/humanizer-ru) — навык (Agent Skill), 
 | Путь | Что это |
 |---|---|
 | `skills/ochelovech/SKILL.md` | инструкция для агента, главный файл продукта |
-| `skills/ochelovech/references/` | примеры «было → стало» и границы признаков |
+| `skills/ochelovech/references/` | примеры «было → стало» и границы признаков; `patterns-en.md` — английские маркеры |
 | `skills/ochelovech/scripts/` | `clean_paste.py`, `apply_edits.py`, `edit_budget.py`, `check_facts.py`: только стандартная библиотека Python |
 | `eval/` | слепое сравнение с другими навыками на русских ИИ-текстах; `eval/fidelity/` — офлайн-регрессия верности правки |
 | `scripts/` | проверка репозитория и сборка архива для Claude.ai |

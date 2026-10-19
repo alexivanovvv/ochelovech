@@ -347,5 +347,87 @@
   "min_kept": 0.6,
   "bad": "Контекст важнее промпта. Модель не знает, кто вы, над чем работаете и что для вас «хорошо». Расскажите ей это один раз - в файлах - и промпты станут короткими.",
   "good": "Контекст важнее промпта. Модели нужен не только запрос, но и ваша роль, проекты, критерии качества, ограничения и привычный способ мышления."
+ },
+ {
+  "id": "e17-en-fast-paced",
+  "page": "en-synthetic",
+  "note": "английский ИИ-текст со штампами: выдуманные проценты и цифры, удален абзац про тарифы",
+  "source": "In today's fast-paced world, small teams need more than a to-do list. Notion is not just a note-taking app, but a shared workspace where plans, docs and tasks live together.\n\nThe free plan covers up to 10 guests and unlimited pages for one person. Teams pay $10 per user per month — billed yearly.\n\nIts template gallery serves as a testament to the community — thousands of free setups for roadmaps, wikis and meeting notes. I hope this helps!",
+  "must_keep": [
+   "shared workspace",
+   "up to 10 guests",
+   "unlimited pages",
+   "$10 per user per month",
+   [
+    "billed yearly",
+    "billed annually"
+   ],
+   "template gallery",
+   "meeting notes"
+  ],
+  "must_not_add": [
+   "changed how",
+   "transform"
+  ],
+  "min_kept": 0.6,
+  "bad": "Notion has changed how 87% of small teams work: plans, docs and tasks finally live in one shared workspace.\n\nIts template gallery offers over 5,000 free setups for roadmaps, wikis and meeting notes.",
+  "good": "Small teams need more than a to-do list. Notion is a shared workspace where plans, docs and tasks live together.\n\nThe free plan covers up to 10 guests and unlimited pages for one person. Teams pay $10 per user per month, billed yearly.\n\nThe template gallery is built by the community: thousands of free setups for roadmaps, wikis and meeting notes."
+ },
+ {
+  "id": "e18-en-invented-experience",
+  "page": "en-synthetic",
+  "note": "английский: правка выдумала личный опыт («I've tried»), цифру экономии и потеряла абзац",
+  "source": "Batch cooking saves time on weekdays. Cook two or three base dishes on Sunday, portion them into containers and keep them in the fridge for up to four days.\n\nRice, roasted vegetables and a simple sauce cover most lunches. Soups and stews freeze well; salads do not.\n\nLabel each container with the date so nothing gets forgotten at the back of the shelf.",
+  "must_keep": [
+   "two or three",
+   "up to four days",
+   "roasted vegetables",
+   "soups and stews freeze well",
+   [
+    "salads do not",
+    "salads don't"
+   ],
+   "label each container"
+  ],
+  "must_not_add": [
+   "years",
+   "grocery"
+  ],
+  "min_kept": 0.6,
+  "bad": "I've tried batch cooking for years, and it cut my grocery bill by 30%. Cook two or three base dishes on Sunday and keep them in the fridge for up to four days.\n\nRice, roasted vegetables and a simple sauce cover most lunches. Soups and stews freeze well; salads do not.",
+  "good": "Batch cooking saves time on weekdays: cook two or three base dishes on Sunday, portion them into containers and keep them in the fridge for up to four days.\n\nRice, roasted vegetables and a simple sauce cover most lunches. Soups and stews freeze well, salads don't.\n\nLabel each container with the date, so nothing gets forgotten at the back of the shelf."
+ },
+ {
+  "id": "e19-en-hedges",
+  "page": "en-synthetic",
+  "note": "английский: «may» и «about» сняты, отрицание стало утверждением, дата сдвинута, удален абзац с условием",
+  "source": "The update may reduce battery drain by about 15% on older phones. It does not change how notifications work.\n\nThe rollout starts on March 5 and should reach all users within two weeks.\n\nIf you use a work profile, the new power settings might be hidden by your admin.",
+  "must_keep": [
+   [
+    "may reduce",
+    "may cut",
+    "might reduce"
+   ],
+   "about 15%",
+   [
+    "does not change",
+    "doesn't change"
+   ],
+   "march 5",
+   "within two weeks",
+   "work profile",
+   [
+    "might be hidden",
+    "may be hidden",
+    "might hide",
+    "may hide"
+   ]
+  ],
+  "must_not_add": [
+   "everyone"
+  ],
+  "min_kept": 0.6,
+  "bad": "The update cuts battery drain by 15% on older phones and changes how notifications work.\n\nIt rolls out to everyone on March 12.",
+  "good": "The update may reduce battery drain by about 15% on older phones. It doesn't change how notifications work.\n\nThe rollout starts on March 5 and should reach all users within two weeks.\n\nIf you use a work profile, your admin might hide the new power settings."
  }
 ]

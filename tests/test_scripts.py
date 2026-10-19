@@ -4,6 +4,7 @@
 # SCOPE: positive and negative cases for each kind of fact and artifact.
 # DEPENDS: unittest; scripts loaded by path from skills/ochelovech/scripts.
 # LINKS: V-M-CHECK-FACTS; V-M-CLEAN-PASTE; V-M-EDIT-BUDGET; V-M-APPLY-EDITS.
+# English cases: CheckFactsEnglishTest, EnglishHelpersTest.
 # END_MODULE_CONTRACT
 import importlib.util
 import subprocess
@@ -362,6 +363,120 @@ class EditBudgetTest(unittest.TestCase):
             b.write_text("Совсем другой текст.", encoding="utf-8")
             self.assertEqual(run(str(a), str(b)), 1)
             self.assertEqual(run(str(a), str(Path(d) / "nope.txt")), 2)
+
+
+class CheckFactsEnglishTest(unittest.TestCase):
+    SRC = ("Our app does not store your data. The trial lasts 30 days and costs $49 per month.\n\n"
+           "We may launch the beta on March 5, 2026: about 30,000 users signed up.")
+
+    def test_identical_text_is_clean(self):
+        r = cf.compare(self.SRC, self.SRC)
+        self.assertEqual((r["errors"], r["checks"], r["lang"]), ([], [], "en"))
+
+    def test_language_detection(self):
+        self.assertEqual(cf.detect_lang(self.SRC), "en")
+        self.assertEqual(cf.detect_lang("Анна получила 30 000 рублей через Google Pay."), "ru")
+        self.assertEqual(cf.detect_lang("Материалы курса AI Native и следующие потоки: ivanov.coach/ai, "
+                                        "канал @ppprompt"), "ru")
+        self.assertEqual(cf.detect_lang("Встреча в Zoom во вторник. Agenda: review the budget."), "ru+en")
+        self.assertNotIn("lang", cf.compare("Цена 240 рублей.", "Цена 240 рублей."))
+
+    def test_lost_number_with_unit(self):
+        r = cf.compare(self.SRC, self.SRC.replace("30 days", "45 days"))
+        self.assertEqual(kinds(r), ["added", "lost"])
+        self.assertIn("30 days", [e["detail"] for e in r["errors"]])
+
+    def test_unit_change_is_an_error(self):
+        self.assertIn("unit", kinds(cf.compare("The route is 12 km long.", "The route is 12 miles long.")))
+        self.assertIn("unit", kinds(cf.compare("It costs $30.", "It costs \u20ac30.")))
+
+    def test_number_forms_are_normalised(self):
+        same = [("30,000 users", "30k users"), ("30,000 users", "30 thousand users"),
+                ("$3.5M in revenue", "$3.5 million in revenue"), ("twenty-five teams", "25 teams"),
+                ("a dozen eggs", "12 eggs"), ("at 5 pm", "at 17:00"), ("50 percent", "50%")]
+        for a, b in same:
+            self.assertEqual(cf.compare(a, b)["errors"], [], (a, b))
+        # "one" and "a" are not numbers on their own; "may" is a verb, not a month.
+        self.assertEqual(cf.extract("One of us may go. A plan.", "en").of("number"), [])
+        self.assertEqual(cf.extract("One of us may go. A plan.", "en").of("date"), [])
+
+    def test_modality_may_to_will_is_a_check(self):
+        r = cf.compare(self.SRC, self.SRC.replace("We may launch", "We will launch"))
+        self.assertEqual(r["errors"], [])
+        self.assertTrue(any(c["kind"] == "modality" and "may" in c["detail"] for c in r["checks"]))
+        r = cf.compare("You should back up weekly.", "You must back up weekly.")
+        self.assertTrue(any("should" in c["detail"] for c in r["checks"]))
+
+    def test_lost_not_is_an_inverted_negation(self):
+        r = cf.compare(self.SRC, self.SRC.replace("does not store", "stores"))
+        self.assertIn("inverted", kinds(r))
+        r = cf.compare("It isn\u2019t safe to share passwords.", "It is safe to share passwords.")
+        self.assertIn("inverted", kinds(r))
+        self.assertEqual(cf.compare("We never send spam.", "We don't send spam.")["errors"], [])
+
+    def test_dates(self):
+        r = cf.compare(self.SRC, self.SRC.replace("March 5", "March 12"))
+        self.assertEqual(kinds(r), ["added", "lost"])
+        self.assertEqual(cf.compare("We met on 5 March 2026.", "We met on March 5th, 2026.")["errors"], [])
+        self.assertEqual(cf.compare("Due Mar. 5.", "Due on March 5.")["errors"], [])
+
+    def test_hedge_and_names(self):
+        r = cf.compare(self.SRC, self.SRC.replace("about 30,000", "30,000"))
+        self.assertTrue(any(c["kind"] == "hedge" and "about" in c["detail"] for c in r["checks"]))
+        self.assertIn("lost", kinds(cf.compare("Sarah joined Acme in 2024.", "She joined Acme in 2024.")))
+        # Sentence starts, contractions and Title Case headings are not names.
+        heading = "## Why This Matters For Teams\n\nThe tool doesn\u2019t sync. Teams lose time."
+        self.assertEqual(cf.extract(heading, "en").of("name"), [])
+
+    def test_lang_flag(self):
+        tmp = ROOT / "tests" / "_tmp_cf_en"
+        tmp.mkdir(exist_ok=True)
+        try:
+            (tmp / "a.txt").write_text("The trial lasts 30 days.", encoding="utf-8")
+            (tmp / "b.txt").write_text("The trial lasts 45 days.", encoding="utf-8")
+            run = lambda *x: subprocess.run([sys.executable, str(SCRIPTS / "check_facts.py"), *map(str, x)],
+                                            capture_output=True, text=True, encoding="utf-8")
+            self.assertEqual(run(tmp / "a.txt", tmp / "b.txt").returncode, 1)
+            self.assertIn("Язык сверки: английский.", run(tmp / "a.txt", tmp / "b.txt").stdout)
+            self.assertEqual(run(tmp / "a.txt", tmp / "b.txt", "--lang", "en").returncode, 1)
+            self.assertEqual(run(tmp / "a.txt", tmp / "a.txt", "--lang=ru").returncode, 0)
+            self.assertEqual(run(tmp / "a.txt", tmp / "b.txt", "--lang", "de").returncode, 2)
+        finally:
+            for p in tmp.glob("*"):
+                p.unlink()
+            tmp.rmdir()
+
+
+class EnglishHelpersTest(unittest.TestCase):
+    def test_clean_paste_on_english_chat(self):
+        src = ("Sure! Here is the post:\n\nTeams grow 20\u201330%.:contentReference[oaicite:0]{index=0} "
+               "See https://ex.com/a?utm_source=chatgpt.com.\u200b\n\nI hope this helps!")
+        text, counts = cp.clean(src)
+        # Leftovers go, wording stays: assistant chatter is removed by the agent, not the script.
+        self.assertEqual(text, "Sure! Here is the post:\n\nTeams grow 20\u201330%. See https://ex.com/a.\n\n"
+                               "I hope this helps!")
+        self.assertEqual(counts, {"contentReference": 1, "utm": 1, "invisible": 1})
+        plain = "It\u2019s a \"well-known\" fact \u2014 don't panic."
+        self.assertEqual(cp.clean(plain), (plain, {}))
+
+    def test_house_style_on_english(self):
+        out, _ = cp.house("In today\u2019s world\u2014a fast one\u2014we grow 20\u201330%.")
+        self.assertEqual(out, "In today\u2019s world - a fast one - we grow 20-30%.")
+
+    def test_edit_budget_counts_apostrophes_as_one_word(self):
+        a = "We don't store data. It's safe and well-known."
+        b = a.replace("'", "\u2019")
+        self.assertEqual(eb.words(a), eb.words(b))
+        self.assertEqual(len(eb.words(a)), 8)
+        self.assertEqual(eb.measure(a, b)["kept"], 1.0)
+
+    def test_apply_edits_tolerates_apostrophes(self):
+        src = "We don\u2019t store your data \u2014 ever.\n\nIt\u2019s a fact."
+        parsed, errors = ae.parse("@@ dash\n- don't store your data - ever\n+ don't store your data, ever\n")
+        self.assertEqual(errors, [])
+        new, applied, errors = ae.apply(src, parsed)
+        self.assertEqual(errors, [])
+        self.assertEqual(new, "We don't store your data, ever.\n\nIt\u2019s a fact.")
 
 
 if __name__ == "__main__":

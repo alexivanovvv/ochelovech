@@ -6,7 +6,11 @@
 #          characters. Text, links and emoji stay intact. Optional house typography of
 #          the author: long and middle dashes -> hyphen with spaces, ё -> е.
 # SCOPE: deterministic, stdlib only; wording is not touched. Code, links and HTML tags are
-#        protected from the house typography.
+#        protected from the house typography. Language-independent: the leftovers are the same
+#        in Russian and English chats. Assistant chatter ("Sure! Here is...", "I hope this
+#        helps!", "Конечно! Вот...") is wording, not a leftover: the agent removes it, not this
+#        script. On English text the house typography also turns em/en dashes into " - " and
+#        en-dash ranges into "-"; ё -> е has nothing to change there.
 # DEPENDS: Python 3.8+ standard library.
 # LINKS: M-CLEAN-PASTE; DF-SKILL-CLEAN; V-M-CLEAN-PASTE.
 # END_MODULE_CONTRACT
@@ -50,7 +54,7 @@ CITATIONS = [
     ("cite", re.compile(r"[ \t]?\[cite(?:_start|_end)?(?::\s*[\d,\s]+)?\]")),
 ]
 
-# Invisible characters that never carry meaning in Russian prose.
+# Invisible characters that never carry meaning in Russian or English prose.
 INVISIBLE = {
     0x200B: "zero-width space", 0x2060: "word joiner", 0xFEFF: "BOM / zero-width no-break",
     0x00AD: "soft hyphen", 0x200E: "LTR mark", 0x200F: "RTL mark", 0x202A: "bidi", 0x202B: "bidi",
@@ -99,7 +103,8 @@ def clean(text: str) -> Tuple[str, Dict[str, int]]:
 
     def fix_url(m: re.Match) -> str:
         url = m.group(0)
-        tail = re.search(r"[.,;:!?]*$", url).group()  # sentence punctuation after the link
+        # sentence punctuation after the link, with any invisible character glued to it
+        tail = re.search(r"[.,;:!?\u200b\u200c\u200d\u2060\ufeff\u00ad]*$", url).group()
         new, n = strip_utm(url[:len(url) - len(tail)])
         bump("utm", n)
         return new + tail

@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # START_MODULE_CONTRACT
-# PURPOSE: Measure how far an edit drifted from the original Russian text: share of words kept,
+# PURPOSE: Measure how far an edit drifted from the original (Russian or English) text: share of words kept,
 #          paragraphs rewritten beyond a threshold, paragraphs deleted or added.
 #          Guards the "edit, don't rewrite" rule of the skill.
 # SCOPE: heuristic, offline, stdlib only. Word-level diff, paragraphs split by blank lines
 #        (or by lines for one-line-per-paragraph input). Says nothing about meaning itself.
+#        Language-independent: a word is letters/digits joined by hyphens or apostrophes
+#        ("well-known", "don't" = "don\u2019t"); case and ё/е are ignored.
 # DEPENDS: Python 3.8+ standard library.
 # LINKS: M-EDIT-BUDGET; V-M-EDIT-BUDGET.
 # END_MODULE_CONTRACT
@@ -37,11 +39,12 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="backslashreplace")
 
 MIN_KEPT = 0.6
-WORD = re.compile(r"[\w%$€₽]+(?:[-'][\w]+)*", re.UNICODE)
+# Apostrophes inside a word keep it whole: "don't" and "don\u2019t" are one word, the same word.
+WORD = re.compile(r"[\w%$€₽£]+(?:[-'\u2019][\w]+)*", re.UNICODE)
 
 
 def _norm(w: str) -> str:
-    return w.lower().replace("ё", "е")
+    return w.lower().replace("ё", "е").replace("\u2019", "'")
 
 
 def words(text: str) -> List[str]:

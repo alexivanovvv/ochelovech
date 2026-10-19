@@ -5,7 +5,9 @@
 #          everything the agent did not quote stays byte-for-byte the same. Reports each
 #          edit, the edit budget (via edit_budget.py) and can write a review page.
 # SCOPE: deterministic, stdlib only. Finds quotes exactly, then tolerant to whitespace,
-#        ё/е, dash and quote variants. Refuses ambiguous, missing and overlapping quotes.
+#        ё/е, dash, quote and apostrophe variants (' = \u2019), so English and Russian quotes
+#        are found alike. Refuses ambiguous, missing and overlapping quotes. The review page UI
+#        is in Russian whatever the language of the text.
 # DEPENDS: Python 3.8+ standard library; edit_budget.py from the same folder.
 # LINKS: M-APPLY-EDITS; M-EDIT-BUDGET; V-M-APPLY-EDITS.
 # END_MODULE_CONTRACT
@@ -121,6 +123,7 @@ def parse(src: str) -> Tuple[List[Edit], List[str]]:
 
 QUOTES = "«»\"“”„"
 DASHES = "—–-"
+APOSTROPHES = "'\u2019\u2018\u02bc"  # don't = don\u2019t: agents and editors swap them
 
 
 def _tolerant(old: str) -> "re.Pattern[str]":
@@ -140,6 +143,8 @@ def _tolerant(old: str) -> "re.Pattern[str]":
                 out.append("[%s]" % DASHES)
             elif ch in QUOTES:
                 out.append("[%s]" % re.escape(QUOTES))
+            elif ch in APOSTROPHES:
+                out.append("[%s]" % APOSTROPHES)
             else:
                 out.append(re.escape(ch))
     return re.compile("".join(out))

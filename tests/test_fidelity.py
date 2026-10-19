@@ -38,6 +38,18 @@ class FidelityTest(unittest.TestCase):
         self.assertIn("новые числа: 80", problems)
         self.assertTrue(any(p.startswith("первое лицо") for p in problems))
 
+    def test_english_first_person(self):
+        case = {"id": "e", "source": "Batch cooking saves time. Cook on Sunday.", "must_keep": [],
+                "must_not_add": []}
+        for out in ("I've tried batch cooking. Cook on Sunday.", "I\u2019m sure it saves time. Cook on Sunday.",
+                    "Batch cooking saves my time. Cook on Sunday.", "We've seen it save time. Cook on Sunday."):
+            self.assertTrue(any(p.startswith("первое лицо") for p in fc.check(case, out)), out)
+        for out in ("Batch cooking saves time, i.e. hours. Cook on Sunday.", "We cook on Sunday to save time."):
+            self.assertFalse(any(p.startswith("первое лицо") for p in fc.check(case, out)), out)
+        # A source that already speaks in the first person may keep it.
+        own = dict(case, source="I cook on Sunday. It saves time.")
+        self.assertEqual(fc.check(own, "I cook on Sunday, and it saves time."), [])
+
     def test_yo_dash_and_quotes_are_tolerated(self):
         case = dict(CASE, source="Это и есть принцип \"own your data\" — всё у вас.",
                     must_keep=["own your data", "все у вас"], must_not_add=[])
