@@ -1,3 +1,5 @@
+> **Переехал:** навык теперь живет в [turboskills/create/ochelovech](https://github.com/alexivanovvv/turboskills/tree/main/create/ochelovech). Этот репозиторий больше не обновляется.
+
 # ochelovech
 
 > Форк [Vladimir-Human/humanizer-ru](https://github.com/Vladimir-Human/humanizer-ru) от Алексея Иванова: тот же навык плюс профиль голоса `references/voice-alexey-ivanov.md` и английский язык (признаки из [blader/humanizer](https://github.com/blader/humanizer), MIT). Таблицы сравнения ниже относятся к оригиналу humanizer-ru.
